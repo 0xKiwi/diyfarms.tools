@@ -38,7 +38,7 @@ contract DIYFarmFactory is Ownable {
     uint256 _fee = (_rewardAmount*fee)/1 ether;
     _rewardToken.safeTransferFrom(msg.sender, treasury, _fee);
     _rewardToken.safeTransferFrom(msg.sender, newFarm, _rewardAmount - _fee);
-    DIYFarm(newFarm).__DIYFarm_init(_stakingToken, _rewardToken, _rewardAmount, _starttime, _duration);
+    DIYFarm(newFarm).__DIYFarm_init(_stakingToken, _rewardToken, _rewardAmount - _fee, _starttime, _duration);
     emit DeployFarm(newFarm, address(_stakingToken), address(_rewardToken));
     return newFarm;
   }

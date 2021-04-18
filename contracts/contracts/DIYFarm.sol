@@ -40,6 +40,8 @@ import "./utils/Initializable.sol";
 import "./utils/SafeMath.sol";
 import "./utils/SafeERC20.sol";
 
+import "hardhat/console.sol";
+
 contract DIYFarm is Initializable, ERC20 {
   using SafeERC20 for IERC20;
   using SafeMath for uint256;
@@ -149,6 +151,8 @@ contract DIYFarm is Initializable, ERC20 {
   function getReward() public updateReward(msg.sender) {
     uint256 reward = earned(msg.sender);
     if (reward > 0) {
+      uint256 bal = rewardToken.balanceOf(address(this));
+      reward = reward > bal ? bal : reward;
       rewards[msg.sender] = 0;
       rewardToken.safeTransfer(msg.sender, reward);
       emit RewardPaid(msg.sender, reward);

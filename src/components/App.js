@@ -1,8 +1,7 @@
 import React, { Component } from 'react'
 import Web3 from 'web3'
-import DaiToken from '../abis/DaiToken.json'
-import DappToken from '../abis/DappToken.json'
-import TokenFarm from '../abis/TokenFarm.json'
+import Token from '../abis/Token.json'
+import Farm from '../abis/Farm.json'
 import Navbar from './Navbar'
 import Main from './Main'
 import './App.css'
@@ -22,37 +21,37 @@ class App extends Component {
 
     const networkId = await web3.eth.net.getId()
 
-    // Load DaiToken
-    const daiTokenData = DaiToken.networks[networkId]
-    if(daiTokenData) {
-      const daiToken = new web3.eth.Contract(DaiToken.abi, daiTokenData.address)
-      this.setState({ daiToken })
-      let daiTokenBalance = await daiToken.methods.balanceOf(this.state.account).call()
-      this.setState({ daiTokenBalance: daiTokenBalance.toString() })
-    } else {
-      window.alert('DaiToken contract not deployed to detected network.')
-    }
-
-    // Load DappToken
-    const dappTokenData = DappToken.networks[networkId]
-    if(dappTokenData) {
-      const dappToken = new web3.eth.Contract(DappToken.abi, dappTokenData.address)
-      this.setState({ dappToken })
-      let dappTokenBalance = await dappToken.methods.balanceOf(this.state.account).call()
-      this.setState({ dappTokenBalance: dappTokenBalance.toString() })
-    } else {
-      window.alert('DappToken contract not deployed to detected network.')
-    }
-
     // Load TokenFarm
-    const tokenFarmData = TokenFarm.networks[networkId]
+    const tokenFarmData = Farm.networks[networkId]
     if(tokenFarmData) {
-      const tokenFarm = new web3.eth.Contract(TokenFarm.abi, tokenFarmData.address)
+      const tokenFarm = new web3.eth.Contract(Farm.abi, tokenFarmData.address)
       this.setState({ tokenFarm })
-      let stakingBalance = await tokenFarm.methods.stakingBalance(this.state.account).call()
+      let stakingBalance = await tokenFarm.methods.balanceOf(this.state.account).call()
       this.setState({ stakingBalance: stakingBalance.toString() })
     } else {
-      window.alert('TokenFarm contract not deployed to detected network.')
+      window.alert('Farm contract not deployed to detected network.')
+    }
+
+    // Load StakingToken
+    const stakingTokenAddr = this.state.tokenFarm.methods.stakingToken();
+    if(stakingTokenAddr) {
+      const stakingToken = new web3.eth.Contract(Token.abi, stakingTokenAddr)
+      this.setState({ stakingToken })
+      let stakingTokenBalance = await stakingToken.methods.balanceOf(this.state.account).call()
+      this.setState({ stakingTokenBalance: stakingTokenBalance.toString() })
+    } else {
+      window.alert('StakingToken contract not deployed to detected network.')
+    }
+
+    // Load RewardToken
+    const rewardTokenAddr = this.state.tokenFarm.methods.rewardToken();
+    if(rewardTokenAddr) {
+      const rewardToken = new web3.eth.Contract(Token.abi, rewardTokenAddr.address)
+      this.setState({ rewardToken })
+      let rewardTokenBalance = await rewardToken.methods.balanceOf(this.state.account).call()
+      this.setState({ rewardTokenBalance: rewardTokenBalance.toString() })
+    } else {
+      window.alert('RewardToken contract not deployed to detected network.')
     }
 
     this.setState({ loading: false })

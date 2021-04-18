@@ -1,5 +1,4 @@
 import React, { Component } from 'react'
-import dai from '../dai.png'
 
 class Main extends Component {
 
@@ -36,7 +35,7 @@ class Main extends Component {
               <div>
                 <label className="float-left"><b>Stake Tokens</b></label>
                 <span className="float-right text-muted">
-                  Balance: {window.web3.utils.fromWei(this.props.daiTokenBalance, 'Ether')}
+                  Balance: {window.web3.utils.fromWei(this.props.stakingTokenBalance, 'Ether')}
                 </span>
               </div>
               <div className="input-group mb-4">
@@ -48,7 +47,7 @@ class Main extends Component {
                   required />
                 <div className="input-group-append">
                   <div className="input-group-text">
-                    <img src={dai} height='32' alt=""/>
+                    {/* <img src={dai} height='32' alt=""/> */}
                     &nbsp;&nbsp;&nbsp; mDAI
                   </div>
                 </div>
