@@ -151,8 +151,6 @@ contract DIYFarm is Initializable, ERC20 {
   function getReward() public updateReward(msg.sender) {
     uint256 reward = earned(msg.sender);
     if (reward > 0) {
-      uint256 bal = rewardToken.balanceOf(address(this));
-      reward = reward > bal ? bal : reward;
       rewards[msg.sender] = 0;
       rewardToken.safeTransfer(msg.sender, reward);
       emit RewardPaid(msg.sender, reward);

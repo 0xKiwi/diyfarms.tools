@@ -1,12 +1,12 @@
 import React, { Component } from 'react'
 import Web3 from 'web3'
-import Token from '../abis/Token.json'
-import Farm from '../abis/Farm.json'
-import Navbar from './Navbar'
-import Main from './Main'
-import './App.css'
+import Token from '../../abis/Token.json'
+import FarmJson from '../../abis/Farm.json'
+import Navbar from '../Navbar'
+import Staking from '../Staking/Staking'
+import './Farm.css'
 
-class App extends Component {
+class Farm extends Component {
 
   async componentWillMount() {
     await this.loadWeb3()
@@ -22,9 +22,9 @@ class App extends Component {
     const networkId = await web3.eth.net.getId()
 
     // Load TokenFarm
-    const tokenFarmData = Farm.networks[networkId]
-    if(tokenFarmData) {
-      const tokenFarm = new web3.eth.Contract(Farm.abi, tokenFarmData.address)
+    const farmAddress = "0xE811E9F796c876e1039CF5dA758FB016a3566cDA"
+    if(farmAddress) {
+      const tokenFarm = new web3.eth.Contract(FarmJson.abi, farmAddress)
       this.setState({ tokenFarm })
       let stakingBalance = await tokenFarm.methods.balanceOf(this.state.account).call()
       this.setState({ stakingBalance: stakingBalance.toString() })
@@ -33,7 +33,8 @@ class App extends Component {
     }
 
     // Load StakingToken
-    const stakingTokenAddr = this.state.tokenFarm.methods.stakingToken();
+    const stakingTokenAddr = await this.state.tokenFarm.methods.stakingToken().call();
+    console.log(stakingTokenAddr);
     if(stakingTokenAddr) {
       const stakingToken = new web3.eth.Contract(Token.abi, stakingTokenAddr)
       this.setState({ stakingToken })
@@ -44,9 +45,10 @@ class App extends Component {
     }
 
     // Load RewardToken
-    const rewardTokenAddr = this.state.tokenFarm.methods.rewardToken();
+    const rewardTokenAddr = await this.state.tokenFarm.methods.rewardToken().call();
+    console.log(rewardTokenAddr);
     if(rewardTokenAddr) {
-      const rewardToken = new web3.eth.Contract(Token.abi, rewardTokenAddr.address)
+      const rewardToken = new web3.eth.Contract(Token.abi, rewardTokenAddr)
       this.setState({ rewardToken })
       let rewardTokenBalance = await rewardToken.methods.balanceOf(this.state.account).call()
       this.setState({ rewardTokenBalance: rewardTokenBalance.toString() })
@@ -72,7 +74,7 @@ class App extends Component {
 
   stakeTokens = (amount) => {
     this.setState({ loading: true })
-    this.state.daiToken.methods.approve(this.state.tokenFarm._address, amount).send({ from: this.state.account }).on('transactionHash', (hash) => {
+    this.state.stakingToken.methods.approve(this.state.tokenFarm._address, amount).send({ from: this.state.account }).on('transactionHash', (hash) => {
       this.state.tokenFarm.methods.stakeTokens(amount).send({ from: this.state.account }).on('transactionHash', (hash) => {
         this.setState({ loading: false })
       })
@@ -81,7 +83,7 @@ class App extends Component {
 
   unstakeTokens = (amount) => {
     this.setState({ loading: true })
-    this.state.tokenFarm.methods.unstakeTokens().send({ from: this.state.account }).on('transactionHash', (hash) => {
+    this.state.stakingToken.methods.unstakeTokens().send({ from: this.state.account }).on('transactionHash', (hash) => {
       this.setState({ loading: false })
     })
   }
@@ -90,11 +92,11 @@ class App extends Component {
     super(props)
     this.state = {
       account: '0x0',
-      daiToken: {},
-      dappToken: {},
+      stakingToken: {},
+      rewardToken: {},
       tokenFarm: {},
-      daiTokenBalance: '0',
-      dappTokenBalance: '0',
+      stakingTokenBalance: '0',
+      rewardTokenBalance: '0',
       stakingBalance: '0',
       loading: true
     }
@@ -105,9 +107,9 @@ class App extends Component {
     if(this.state.loading) {
       content = <p id="loader" className="text-center">Loading...</p>
     } else {
-      content = <Main
-        daiTokenBalance={this.state.daiTokenBalance}
-        dappTokenBalance={this.state.dappTokenBalance}
+      content = <Staking
+        stakingTokenBalance={this.state.stakingTokenBalance}
+        rewardTokenBalance={this.state.rewardTokenBalance}
         stakingBalance={this.state.stakingBalance}
         stakeTokens={this.stakeTokens}
         unstakeTokens={this.unstakeTokens}
@@ -139,4 +141,4 @@ class App extends Component {
   }
 }
 
-export default App;
+export default Farm;
