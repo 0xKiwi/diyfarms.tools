@@ -11,26 +11,7 @@ let testStakeToken;
 let testRewardToken;
 let farm;
 
-const expectException = async (promise, expectedError) => {
-  try {
-    await promise;
-  } catch (error) {
-    if (error.message.indexOf(expectedError) === -1) {
-      const actualError = error.message.replace(
-        "Returned error: VM Exception while processing transaction: ",
-        ""
-      );
-      fail(actualError); // , expectedError, 'Wrong kind of exception received');
-    }
-    return;
-  }
-
-  fail("Expected an exception but none was received");
-};
-
-const expectRevert = async (promise) => {
-  await expectException(promise, "revert");
-};
+let rewardsPerSecond;
 
 describe("DIYFarmFactory", function() {
   before(async function () {
@@ -53,12 +34,10 @@ describe("DIYFarmFactory", function() {
   it("Should deploy pools", async function() {
     let bal = await testRewardToken.balanceOf(primary.address);
     await testRewardToken.approve(factory.address, bal);
-    let blockTimestamp = await factory.blockTimestamp(); 
     let tx = await factory.deployFarm(
       testStakeToken.address,
       testRewardToken.address,
       bal,
-      blockTimestamp.add(5),
       1000,
     )
     let waited = await tx.wait()
@@ -72,12 +51,7 @@ describe("DIYFarmFactory", function() {
     let feePerc = await factory.fee();
     let fee = balance.mul(feePerc).div(BASE)
     expect(farmBal).to.equal(bal.sub(fee));
-  });
-
-  it("Should not stake in pool before start", async function () {
-    let bal = await testStakeToken.balanceOf(primary.address);
-    await testStakeToken.approve(farm.address, bal);
-    await expectRevert(farm.stake(bal), "not started");
+    rewardsPerSecond = bal.sub(fee).div(1000);
   });
 
   it("Should stake in pool", async function () {
@@ -88,6 +62,10 @@ describe("DIYFarmFactory", function() {
     expect(diyBal).to.equal(bal);
   });
 
+  it("Should not let the owner claim tokens before end", async function () {
+    await expect(farm.reclaimToken(testRewardToken.address)).to.be.revertedWith("Not time yet");
+  })
+
   it("Should pass the time", async function () {
     await network.provider.send("evm_increaseTime", [5])
     await network.provider.send("evm_mine")
@@ -97,7 +75,7 @@ describe("DIYFarmFactory", function() {
   it("Should accumulate rewards afer 5 seconds", async function() {
     earned = await farm.earned(primary.address);
     console.log(earned.toString())
-    expect(earned.toString()).to.not.equal("0");
+    expect(earned.toString()).to.equal(rewardsPerSecond.mul(6));
   });
 
   it("Should pass the time", async function () {
@@ -107,7 +85,7 @@ describe("DIYFarmFactory", function() {
 
   it("Should accumulate rewards after 11 seconds", async function() {
     let newEarned = await farm.earned(primary.address);
-    expect(newEarned.toString()).to.be.equal(earned.mul(2));
+    expect(newEarned.toString()).to.be.equal(rewardsPerSecond.mul(11));
   });
 
   it("Should pass the time", async function () {
@@ -117,7 +95,7 @@ describe("DIYFarmFactory", function() {
 
   it("Should accumulate rewards after 50 seconds", async function() {
     let newEarned = await farm.earned(primary.address);
-    expect(newEarned.toString()).to.be.equal(earned.mul(10));
+    expect(newEarned.toString()).to.be.equal(rewardsPerSecond.mul(51));
   });
 
   it("Should pass the time", async function () {
@@ -127,7 +105,7 @@ describe("DIYFarmFactory", function() {
 
   it("Should accumulate rewards after 100 seconds", async function() {
     let newEarned = await farm.earned(primary.address);
-    expect(newEarned.toString()).to.be.equal(earned.mul(20));
+    expect(newEarned.toString()).to.be.equal(rewardsPerSecond.mul(101));
   });
 
   it("Should pass the time", async function () {
@@ -137,7 +115,7 @@ describe("DIYFarmFactory", function() {
 
   it("Should accumulate rewards after 1000 seconds", async function() {
     let newEarned = await farm.earned(primary.address);
-    expect(newEarned.toString()).to.be.equal(earned.mul(200));
+    expect(newEarned.toString()).to.be.equal(rewardsPerSecond.mul(998));
   });
 
   it("Should pass the time", async function () {
@@ -147,7 +125,7 @@ describe("DIYFarmFactory", function() {
 
   it("Should not accumulate rewards after finishing", async function() {
     let newEarned = await farm.earned(primary.address);
-    expect(newEarned.toString()).to.be.equal(earned.mul(200));
+    expect(newEarned.toString()).to.be.equal(rewardsPerSecond.mul(998));
   });
 
   it("Should let you withdraw from pool", async function () {
@@ -174,7 +152,7 @@ describe("DIYFarmFactory", function() {
     let newBal = await testStakeToken.balanceOf(primary.address);
     expect(newBal).to.equal(diyBal);
     let rewardBal = await testRewardToken.balanceOf(primary.address);
-    expect(rewardBal).to.equal(rewardFarmBal);
+    expect(rewardBal).to.equal(rewardFarmBal.sub(rewardsPerSecond.mul(2)));
   });
 
   it("Should stake in pool after no rewards", async function () {
@@ -185,6 +163,14 @@ describe("DIYFarmFactory", function() {
     expect(diyBal).to.equal(bal);
   });
 
+  it("Should not let the owner claim staking tokens after end", async function () {
+    await expect(farm.reclaimToken(testStakeToken.address)).to.be.revertedWith("Cant redeem staking token");
+  })
+
+  it("Should not let someone else claim reward tokens after end", async function () {
+    await expect(farm.connect(alice).reclaimToken(testStakeToken.address)).to.be.revertedWith("Not owner");
+  })
+
   it("Should let you exit from pool after no rewards", async function () {
     let diyBal = await farm.balanceOf(primary.address);
     await farm.approve(farm.address, diyBal);
@@ -192,4 +178,21 @@ describe("DIYFarmFactory", function() {
     let newBal = await testStakeToken.balanceOf(primary.address);
     expect(newBal).to.equal(diyBal);
   });
+
+  it("Should pass the time past 2 weeks", async function () {
+    await network.provider.send("evm_increaseTime", [1209600])
+    await network.provider.send("evm_mine")
+  });
+
+  it("Should not let the owner claim staking tokens after delay", async function () {
+    await expect(farm.reclaimToken(testStakeToken.address)).to.be.revertedWith("Cant redeem staking token");
+  })
+
+  it("Should not let someone else claim reward tokens after delay", async function () {
+    await expect(farm.connect(alice).reclaimToken(testRewardToken.address)).to.be.revertedWith("Not owner");
+  })
+
+  it("Should let the owner claim reward tokens after delay", async function () {
+    await farm.reclaimToken(testRewardToken.address);
+  })
 });

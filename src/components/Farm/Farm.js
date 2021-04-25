@@ -50,7 +50,7 @@ class Farm extends Component {
     if(rewardTokenAddr) {
       const rewardToken = new web3.eth.Contract(Token.abi, rewardTokenAddr)
       this.setState({ rewardToken })
-      let rewardTokenBalance = await rewardToken.methods.balanceOf(this.state.account).call()
+      let rewardTokenBalance = await this.state.tokenFarm.methods.earned(this.state.account).call()
       this.setState({ rewardTokenBalance: rewardTokenBalance.toString() })
     } else {
       window.alert('RewardToken contract not deployed to detected network.')
@@ -75,7 +75,7 @@ class Farm extends Component {
   stakeTokens = (amount) => {
     this.setState({ loading: true })
     this.state.stakingToken.methods.approve(this.state.tokenFarm._address, amount).send({ from: this.state.account }).on('transactionHash', (hash) => {
-      this.state.tokenFarm.methods.stakeTokens(amount).send({ from: this.state.account }).on('transactionHash', (hash) => {
+      this.state.tokenFarm.methods.stake(amount).send({ from: this.state.account }).on('transactionHash', (hash) => {
         this.setState({ loading: false })
       })
     })
@@ -83,7 +83,7 @@ class Farm extends Component {
 
   unstakeTokens = (amount) => {
     this.setState({ loading: true })
-    this.state.stakingToken.methods.unstakeTokens().send({ from: this.state.account }).on('transactionHash', (hash) => {
+    this.state.stakingToken.methods.exit().send({ from: this.state.account }).on('transactionHash', (hash) => {
       this.setState({ loading: false })
     })
   }

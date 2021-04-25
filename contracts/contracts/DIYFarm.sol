@@ -49,8 +49,8 @@ contract DIYFarm is Initializable, ERC20 {
   IERC20 public stakingToken;
   IERC20 public rewardToken;
   uint256 public duration;
+  address public owner;
 
-  uint256 public starttime; // 2020-08-11 19:00:00 (UTC UTC +00:00)
   uint256 public periodFinish;
   uint256 public rewardRate;
   uint256 public lastUpdateTime;
@@ -68,26 +68,19 @@ contract DIYFarm is Initializable, ERC20 {
   }
 
   function __DIYFarm_init(
+    address _owner,
     IERC20 _stakingToken, 
     IERC20 _rewardToken, 
     uint256 _rewardAmount, 
-    uint256 _starttime, 
     uint256 _duration
   ) public initializer {
-    require(_starttime >= block.timestamp);
     require(_duration > 0);
+    owner = _owner; 
     bytes memory newSymbol = abi.encodePacked("diy", _stakingToken.symbol(), "-", _rewardToken.symbol());
     __ERC20_init(string(newSymbol), string(newSymbol));
     stakingToken = _stakingToken;
     rewardToken = _rewardToken;
-    starttime = _starttime;
-    duration = _duration;
-    notifyRewardAmount(_rewardAmount);
-  }
-
-  modifier checkStart(){
-    require(block.timestamp >= starttime, "not started");
-    _;
+    notifyRewardAmount(_rewardAmount, _duration);
   }
 
   modifier updateReward(address account) {
@@ -122,21 +115,14 @@ contract DIYFarm is Initializable, ERC20 {
         .add(rewards[account]);
   }
 
-  function stake(uint256 amount) external updateReward(msg.sender) checkStart {
+  function stake(uint256 amount) external updateReward(msg.sender) {
     require(amount > 0, "Cannot stake 0");
     stakingToken.safeTransferFrom(msg.sender, address(this), amount);
     _mint(msg.sender, amount);
     emit Staked(msg.sender, amount);
   }
 
-  function withdraw(uint256 amount) public updateReward(msg.sender) checkStart {
-    require(amount > 0, "Cannot withdraw 0");
-    _burn(msg.sender, amount);
-    stakingToken.safeTransfer(msg.sender, amount);
-    emit Withdrawn(msg.sender, amount);
-  }
-
-  function emergencyWithdraw(uint256 amount) public checkStart {
+  function withdraw(uint256 amount) public updateReward(msg.sender) {
     require(amount > 0, "Cannot withdraw 0");
     _burn(msg.sender, amount);
     stakingToken.safeTransfer(msg.sender, amount);
@@ -157,12 +143,28 @@ contract DIYFarm is Initializable, ERC20 {
     }
   }
 
+  function reclaimToken(address _token) external {
+    require(msg.sender == owner, "Not owner");
+    require(_token != address(stakingToken), "Cant redeem staking token");
+    require(block.timestamp >= periodFinish.add(14 days), "Not time yet");
+    uint256 bal = IERC20(_token).balanceOf(address(this));
+    IERC20(_token).safeTransfer(msg.sender, bal);
+  }
+
   // Modified from original code to only be called once and issue rewards linearly
   // instead of previous halving behavior.
-  function notifyRewardAmount(uint256 reward) internal initializer updateReward(address(0)) {
-    rewardRate = reward.div(duration);
+  function notifyRewardAmount(uint256 reward, uint256 _duration) internal initializer updateReward(address(0)) {
+    duration = _duration;
+    rewardRate = reward.div(_duration);
+    // Ensure the provided reward amount is not more than the balance in the contract.
+    // This keeps the reward rate in the right range, preventing overflows due to
+    // very high values of rewardRate in the earned and rewardsPerToken functions;
+    // Reward + leftover must be less than 2^256 / 10^18 to avoid overflow.
+    uint balance = rewardToken.balanceOf(address(this));
+    require(rewardRate <= balance.div(_duration), "Provided reward too high");
+
     lastUpdateTime = block.timestamp;
-    periodFinish = starttime.add(duration);
+    periodFinish = block.timestamp.add(_duration);
     emit RewardAdded(reward);
   }
 }

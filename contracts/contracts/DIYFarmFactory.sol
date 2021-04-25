@@ -30,7 +30,6 @@ contract DIYFarmFactory is Ownable {
     IERC20 _stakingToken, 
     IERC20 _rewardToken, 
     uint256 _rewardAmount, 
-    uint256 _starttime, 
     uint256 _duration
   ) external returns (address) {
     address newFarm = Clones.clone(farmImpl);
@@ -38,7 +37,7 @@ contract DIYFarmFactory is Ownable {
     uint256 _fee = (_rewardAmount*fee)/1 ether;
     _rewardToken.safeTransferFrom(msg.sender, treasury, _fee);
     _rewardToken.safeTransferFrom(msg.sender, newFarm, _rewardAmount - _fee);
-    DIYFarm(newFarm).__DIYFarm_init(_stakingToken, _rewardToken, _rewardAmount - _fee, _starttime, _duration);
+    DIYFarm(newFarm).__DIYFarm_init(msg.sender, _stakingToken, _rewardToken, _rewardAmount - _fee, _duration);
     emit DeployFarm(newFarm, address(_stakingToken), address(_rewardToken));
     return newFarm;
   }
