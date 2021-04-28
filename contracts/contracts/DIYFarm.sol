@@ -40,8 +40,6 @@ import "./utils/Initializable.sol";
 import "./utils/SafeMath.sol";
 import "./utils/SafeERC20.sol";
 
-import "hardhat/console.sol";
-
 contract DIYFarm is Initializable, ERC20 {
   using SafeERC20 for IERC20;
   using SafeMath for uint256;
