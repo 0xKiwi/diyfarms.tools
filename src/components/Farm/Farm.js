@@ -120,25 +120,6 @@ class Farm extends Component {
   }
 
   render() {
-    let content;
-    if (this.state.loading) {
-      content = (
-        <p id="loader" className="text-center">
-          Loading...
-        </p>
-      );
-    } else {
-      content = (
-        <Staking
-          stakingTokenBalance={this.state.stakingTokenBalance}
-          rewardTokenBalance={this.state.rewardTokenBalance}
-          stakingBalance={this.state.stakingBalance}
-          stakeTokens={this.stakeTokens}
-          unstakeTokens={this.unstakeTokens}
-        />
-      );
-    }
-
     return (
       <div>
         <Navbar account={this.state.account} />
@@ -156,7 +137,19 @@ class Farm extends Component {
                   rel="noopener noreferrer"
                 ></a>
 
-                {content}
+                {this.state.loading ? (
+                  <p id="loader" className="text-center">
+                    Loading...
+                  </p>
+                ) : (
+                  <Staking
+                    stakingTokenBalance={this.state.stakingTokenBalance}
+                    rewardTokenBalance={this.state.rewardTokenBalance}
+                    stakingBalance={this.state.stakingBalance}
+                    stakeTokens={this.stakeTokens}
+                    unstakeTokens={this.unstakeTokens}
+                  />
+                )}
               </div>
             </main>
           </div>
