@@ -131,12 +131,6 @@ class Farm extends Component {
               style={{ maxWidth: "600px" }}
             >
               <div className="content mr-auto ml-auto">
-                <a
-                  href="http://www.dappuniversity.com/bootcamp"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                ></a>
-
                 {this.state.loading ? (
                   <p id="loader" className="text-center">
                     Loading...
