@@ -5,7 +5,6 @@ import FarmJson from "../../abis/Farm.json";
 import Navbar from "../Navbar";
 import Staking from "../Staking/Staking";
 import "./Farm.css";
-import { useParams } from "react-router";
 
 class Farm extends Component {
   async componentWillMount() {
