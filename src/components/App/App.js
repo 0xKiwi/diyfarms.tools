@@ -49,17 +49,6 @@ class App extends Component {
   }
 
   render() {
-    let content;
-    if (this.state.loading) {
-      content = (
-        <p id="loader" className="text-center">
-          Loading...
-        </p>
-      );
-    } else {
-      content = <p> based </p>;
-    }
-
     return (
       <div>
         <Navbar account={this.state.account} />
