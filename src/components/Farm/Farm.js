@@ -18,8 +18,6 @@ class Farm extends Component {
     const accounts = await web3.eth.getAccounts();
     this.setState({ account: accounts[0] });
 
-    const networkId = await web3.eth.net.getId();
-
     // Load TokenFarm
     const urlItems = window.location.href.split("/");
     let farmAddress = urlItems[urlItems.length - 1];
