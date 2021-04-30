@@ -144,14 +144,16 @@ contract DIYFarm is Initializable, ERC20 {
   function reclaimToken(address _token) external {
     require(msg.sender == owner, "Not owner");
     require(_token != address(stakingToken), "Cant redeem staking token");
-    require(block.timestamp >= periodFinish.add(14 days), "Not time yet");
+    require(block.timestamp >= periodFinish.add(21 days), "Not time yet");
     uint256 bal = IERC20(_token).balanceOf(address(this));
     IERC20(_token).safeTransfer(msg.sender, bal);
   }
 
   // Modified from original code to only be called once and issue rewards linearly
   // instead of previous halving behavior.
-  function notifyRewardAmount(uint256 reward, uint256 _duration) internal initializer updateReward(address(0)) {
+  function notifyRewardAmount(uint256 reward, uint256 _duration) public updateReward(address(0)) {
+    require(msg.sender == owner, "Not owner");
+    require(block.timestamp >= periodFinish.add(10 days), "Too soon");
     duration = _duration;
     rewardRate = reward.div(_duration);
     // Ensure the provided reward amount is not more than the balance in the contract.
