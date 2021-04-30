@@ -192,6 +192,17 @@ describe("DIYFarmFactory", function() {
     await expect(farm.connect(alice).reclaimToken(testRewardToken.address)).to.be.revertedWith("Not owner");
   })
 
+  it("Should let the owner extend rewards", async function() {
+    let bal = await testRewardToken.balanceOf(primary.address);
+    await testRewardToken.approve(farm.address, bal);
+    await farm.notifyRewardAmount(bal, 604800);
+  })
+
+  it("Should pass the time past 21 days", async function () {
+    await network.provider.send("evm_increaseTime", [604800+1814400])
+    await network.provider.send("evm_mine")
+  });
+
   it("Should let the owner claim reward tokens after delay", async function () {
     await farm.reclaimToken(testRewardToken.address);
   })

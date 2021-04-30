@@ -78,7 +78,9 @@ contract DIYFarm is Initializable, ERC20 {
     __ERC20_init(string(newSymbol), string(newSymbol));
     stakingToken = _stakingToken;
     rewardToken = _rewardToken;
-    notifyRewardAmount(_rewardAmount, _duration);
+    owner = msg.sender;
+    _notifyRewardAmount(_rewardAmount, _duration);
+    owner = _owner;
   }
 
   modifier updateReward(address account) {
@@ -152,8 +154,13 @@ contract DIYFarm is Initializable, ERC20 {
   // Modified from original code to only be called once and issue rewards linearly
   // instead of previous halving behavior.
   function notifyRewardAmount(uint256 reward, uint256 _duration) public updateReward(address(0)) {
+    rewardToken.transferFrom(owner, address(this), reward);
+    _notifyRewardAmount(reward, _duration);
+  }
+
+  function _notifyRewardAmount(uint256 reward, uint256 _duration) internal updateReward(address(0)) {
     require(msg.sender == owner, "Not owner");
-    require(block.timestamp >= periodFinish.add(10 days), "Too soon");
+    require(block.timestamp >= periodFinish.add(7 days), "Too soon");
     duration = _duration;
     rewardRate = reward.div(_duration);
     // Ensure the provided reward amount is not more than the balance in the contract.
