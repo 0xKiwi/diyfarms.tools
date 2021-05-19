@@ -73,12 +73,10 @@ contract DIYFarm is Initializable, ERC20 {
     uint256 _duration
   ) public initializer {
     require(_duration > 0);
-    owner = _owner; 
     bytes memory newSymbol = abi.encodePacked("diy", _stakingToken.symbol(), "-", _rewardToken.symbol());
     __ERC20_init(string(newSymbol), string(newSymbol));
     stakingToken = _stakingToken;
     rewardToken = _rewardToken;
-    owner = msg.sender;
     _notifyRewardAmount(_rewardAmount, _duration);
     owner = _owner;
   }
