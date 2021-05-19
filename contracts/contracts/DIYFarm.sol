@@ -161,15 +161,11 @@ contract DIYFarm is Initializable, ERC20 {
   function _notifyRewardAmount(uint256 reward, uint256 _duration) internal updateReward(address(0)) {
     require(msg.sender == owner, "Not owner");
     require(block.timestamp >= periodFinish.add(7 days), "Too soon");
+    uint balance = rewardToken.balanceOf(address(this));
+    require(reward <= balance, "Provided reward too high");
+    
     duration = _duration;
     rewardRate = reward.div(_duration);
-    // Ensure the provided reward amount is not more than the balance in the contract.
-    // This keeps the reward rate in the right range, preventing overflows due to
-    // very high values of rewardRate in the earned and rewardsPerToken functions;
-    // Reward + leftover must be less than 2^256 / 10^18 to avoid overflow.
-    uint balance = rewardToken.balanceOf(address(this));
-    require(rewardRate <= balance.div(_duration), "Provided reward too high");
-
     lastUpdateTime = block.timestamp;
     periodFinish = block.timestamp.add(_duration);
     emit RewardAdded(reward);
